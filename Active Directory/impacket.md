@@ -115,6 +115,7 @@ Gain More Privs  Crack Password
                 ▼
           Dump Entire Domain
 ---
+---
 
 # Impacket - Request a Kerberos TGT
 
