@@ -1,35 +1,25 @@
----
+# LDAP Enumeration Cheat Sheet
 
-# ldapsearch - Enumerate Active Directory
-
-## Purpose
-
-Query an LDAP server directly to enumerate Active Directory objects, attributes, users, groups, computers, and domain information.
-
-Useful when:
-
-- BloodHound is unavailable
-- You need raw LDAP data
-- Troubleshooting permissions
-- Performing manual enumeration
+> **Purpose:** Query an LDAP server to enumerate Active Directory objects, users, groups, computers, and domain information.
 
 ---
 
-# ldapsearch - Authenticated LDAP Enumeration
+# Authenticated LDAP Enumeration
 
-## Purpose
+## Description
 
 Perform an authenticated LDAP search against the domain.
 
 ### Requirements
 
 - [ ] Valid domain credentials
-- [ ] LDAP (389) or LDAPS (636) accessible
+- [ ] LDAP (389) or LDAPS (636) reachable
 
 ### Command
 
 ```bash
-ldapsearch -x \
+ldapsearch \
+-x \
 -H ldap://<DC_HOSTNAME_OR_IP> \
 -D "<USERNAME>@<DOMAIN>" \
 -w '<PASSWORD>' \
@@ -39,37 +29,35 @@ ldapsearch -x \
 ### Example
 
 ```bash
-ldapsearch -x \
+ldapsearch \
+-x \
 -H ldap://dc01.example.com \
 -D "alice@example.com" \
 -w 'Password123!' \
 -b "DC=example,DC=com"
 ```
 
-### Common Uses
-
-*Retrieve*
+### Common Enumeration Targets
 
 - Users
 - Groups
 - Computers
 - Organizational Units (OUs)
 - Service Accounts
-- Group Memberships
+- Group Membership
+- Domain Information
 
 ---
 
-# ldapsearch - Discover Naming Contexts
+# Discover the Base DN (Naming Context)
 
-## Purpose
+## Description
 
-Retrieve the naming contexts (base Distinguished Names) of the LDAP directory.
-
-Useful when you do **not** know the domain's Base DN.
+If you don't know the domain's Base DN (e.g. `DC=example,DC=com`), query the RootDSE.
 
 ### Requirements
 
-- [ ] LDAP accessible
+- [ ] LDAP reachable
 - [ ] Anonymous access may work (depends on configuration)
 
 ### Command
@@ -94,19 +82,19 @@ DC=DomainDnsZones,DC=example,DC=com
 DC=ForestDnsZones,DC=example,DC=com
 ```
 
-### Why?
+### Why Use This?
 
-The returned `DC=example,DC=com` becomes your Base DN for future LDAP queries.
+The first `DC=...` value is usually your Base DN for future LDAP queries.
 
 ---
 
-# ldapsearch - Anonymous LDAP Enumeration
+# Anonymous LDAP Enumeration
 
-## Purpose
+## Description
 
-Attempt anonymous LDAP enumeration.
+Attempt LDAP enumeration without credentials.
 
-Some environments permit anonymous reads, exposing valuable information without credentials.
+Some Active Directory environments allow anonymous LDAP reads.
 
 ### Requirements
 
@@ -121,136 +109,198 @@ ldapsearch \
 -b "<BASE_DN>"
 ```
 
-### Example
-
-```bash
-ldapsearch \
--x \
--H ldap://dc01.example.com \
--b "DC=example,DC=com"
-```
-
-### Possible Information Retrieved
+### Possible Information
 
 - Users
 - Groups
 - Computers
-- OUs
-- Domain information
-- Password policies (if exposed)
+- Organizational Units
+- Domain Information
+- Password Policy (if exposed)
 
 ---
 
-# Useful LDAP Filters
+# Enumerate All Users
 
-## Enumerate all users
+## Purpose
+
+Retrieve every user object in the domain.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(objectClass=user)"
 ```
 
 ---
 
-## Enumerate all groups
+# Enumerate All Groups
+
+## Purpose
+
+Retrieve every group object.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(objectClass=group)"
 ```
 
 ---
 
-## Enumerate all computers
+# Enumerate All Computers
+
+## Purpose
+
+Retrieve every computer object.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(objectClass=computer)"
 ```
 
 ---
 
-## Find Service Accounts (SPNs)
+# Find Accounts with SPNs (Kerberoast Targets)
+
+## Purpose
+
+Locate accounts configured with Service Principal Names.
+
+### Why?
+
+These accounts are potential Kerberoasting targets.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(servicePrincipalName=*)"
 ```
 
-Useful for Kerberoasting.
-
 ---
 
-## Find Domain Admins Group
+# Find Domain Admins Group
+
+## Purpose
+
+Locate the Domain Admins group.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(cn=Domain Admins)"
 ```
 
 ---
 
-## Find a Specific User
+# Find a Specific User
+
+## Purpose
+
+Retrieve information about a single user.
+
+### Command
 
 ```bash
-ldapsearch -x -H ldap://<DC> \
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
 -b "<BASE_DN>" \
 "(sAMAccountName=<USERNAME>)"
 ```
 
 ---
 
-## Display Specific Attributes
+# Retrieve Specific LDAP Attributes
 
-```bash
-ldapsearch -x -H ldap://<DC> \
--b "<BASE_DN>" \
-"(sAMAccountName=<USERNAME>)" \
-memberOf pwdLastSet userAccountControl servicePrincipalName
-```
+## Purpose
 
-Useful attributes include:
+Display only the attributes you care about.
+
+### Common Useful Attributes
 
 - memberOf
 - userAccountControl
 - servicePrincipalName
 - pwdLastSet
 - lastLogon
+- lastLogonTimestamp
+- badPwdCount
+- lockoutTime
 - description
 - msDS-AllowedToDelegateTo
 - msDS-KeyCredentialLink
 
+### Command
+
+```bash
+ldapsearch \
+-x \
+-H ldap://<DC_HOSTNAME_OR_IP> \
+-b "<BASE_DN>" \
+"(sAMAccountName=<USERNAME>)" \
+memberOf \
+userAccountControl \
+servicePrincipalName \
+pwdLastSet
+```
+
 ---
 
-# Typical LDAP Enumeration Workflow
+# LDAP Enumeration Workflow
 
 ```text
-Discover Naming Context
-        │
-        ▼
-Find Base DN
-        │
-        ▼
-Anonymous LDAP? (Try)
-        │
-        ▼
-Authenticated LDAP
-        │
-        ▼
-Enumerate
- ├── Users
- ├── Groups
- ├── Computers
- ├── OUs
- ├── SPNs
- ├── Descriptions
- └── Interesting Attributes
-        │
-        ▼
-Identify Attack Paths
+                 Start
+                   │
+                   ▼
+        Discover Base DN (RootDSE)
+                   │
+                   ▼
+     Try Anonymous LDAP Enumeration
+                   │
+          ┌────────┴────────┐
+          │                 │
+       Success           Failed
+          │                 │
+          ▼                 ▼
+ Continue Enum      Authenticate
+          │                 │
+          └────────┬────────┘
+                   ▼
+      Enumerate Users / Groups / Computers
+                   │
+                   ▼
+         Search for Interesting Objects
+                   │
+         ├── SPNs
+         ├── Descriptions
+         ├── Privileged Groups
+         ├── Delegation
+         ├── Service Accounts
+         ├── Key Credentials
+         └── Sensitive Attributes
+                   │
+                   ▼
+          Identify Attack Paths
 ```
