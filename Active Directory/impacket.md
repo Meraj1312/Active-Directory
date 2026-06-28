@@ -114,4 +114,46 @@ Gain More Privs  Crack Password
          secretsdump -just-dc
                 ▼
           Dump Entire Domain
+---
+
+# Impacket - Request a Kerberos TGT
+
+## Purpose
+
+Authenticate to Active Directory and obtain a Kerberos Ticket Granting Ticket (TGT).
+
+This creates a `.ccache` file that can later be used with Kerberos authentication (`-k`, `--use-kcache`).
+
+### Requirements
+
+- [ ] Valid domain credentials
+- [ ] Kerberos (TCP/UDP 88) reachable
+- [ ] Time synchronized with the Domain Controller
+
+### Command
+
+```bash
+impacket-getTGT '<DOMAIN>/<USERNAME>:<PASSWORD>'
 ```
+
+### Example
+
+```bash
+impacket-getTGT 'example.local/alice:Password123!'
+```
+
+### Output
+
+```
+alice.ccache
+```
+
+### Common Follow-up
+
+```bash
+export KRB5CCNAME=alice.ccache
+```
+
+Most Impacket, BloodyAD, NetExec and BloodHound commands can now authenticate using Kerberos.
+
+---
