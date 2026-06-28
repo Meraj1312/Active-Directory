@@ -48,7 +48,7 @@ ldapsearch -x \
 
 ### Common Uses
 
-Retrieve:
+*Retrieve*
 
 - Users
 - Groups
