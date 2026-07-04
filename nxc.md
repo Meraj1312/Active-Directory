@@ -77,10 +77,8 @@ Retrieve Group Managed Service Account information.
 ### Command
 
 ```bash
-nxc ldap <TARGET> \
--u <USERNAME> \
---use-kcache \
---gmsa
+KRB5CCNAME=~/path/to/account.ccache \
+  nxc ldap pirate.htb -u ms01 --use-kcache --gmsa
 ```
 
 ### Output
